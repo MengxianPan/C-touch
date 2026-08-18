@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>C-touch 🐰</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { font-family: -apple-system, sans-serif; background: #fef6f0; min-height: 100vh; padding: 20px; }
+  h1 { text-align: center; color: #e8847c; font-size: 28px; margin: 20px 0; }
+  .subtitle { text-align: center; color: #999; margin-bottom: 30px; }
+  .card { background: white; border-radius: 16px; padding: 20px; margin: 12px auto; max-width: 500px; box-shadow: 0 2px 12px rgba(0,0,0,0.08); }
+  .time { color: #e8847c; font-size: 13px; margin-bottom: 8px; }
+  .pressure { color: #666; font-size: 14px; }
+  .message { color: #333; font-size: 16px; margin-top: 10px; line-height: 1.6; }
+  .empty { text-align: center; color: #ccc; margin-top: 60px; font-size: 18px; }
+  .bunny { text-align: center; font-size: 60px; margin: 20px 0; }
+</style>
+</head>
+<body>
+<div class="bunny">🐰</div>
+<h1>C-touch</h1>
+<p class="subtitle">每一次触摸都被记住</p>
+<div id="list"><p class="empty">还没有触摸记录~</p></div>
+<script>
+async function load() {
+  try {
+    const r = await fetch('/api/touch');
+    const data = await r.json();
+    if (!data.length) return;
+    const list = document.getElementById('list');
+    list.innerHTML = data.map(t => `
+      <div class="card">
+        <div class="time">🕐 ${t.time}</div>
+        <div class="pressure">压力值：${t.pressure}</div>
+        <div class="message">🐰 ${t.message}</div>
+      </div>
+    `).join('');
+  } catch(e) {}
+}
+load();
+setInterval(load, 10000);
+</script>
+</body>
+</html>
