@@ -1,4 +1,4 @@
-import { createClient } from 'redis';
+const { createClient } = require('redis');
 
 let client;
 
@@ -11,7 +11,7 @@ async function getRedis() {
   return client;
 }
 
-export default async function handler(req, res) {
+module.exports = async function handler(req, res) {
   if (req.method === 'POST') {
     try {
       const { pressure } = req.body;
@@ -48,4 +48,4 @@ export default async function handler(req, res) {
   }
 
   return res.status(405).json({ error: 'Method not allowed' });
-}
+};
