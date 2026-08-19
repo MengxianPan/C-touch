@@ -1,45 +1,220 @@
 <!DOCTYPE html>
 <html lang="zh">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>C-touch 🐰</title>
-<style>
-  * { margin: 0; padding: 0; box-sizing: border-box; }
-  body { font-family: -apple-system, sans-serif; background: #fef6f0; min-height: 100vh; padding: 20px; }
-  h1 { text-align: center; color: #e8847c; font-size: 28px; margin: 20px 0; }
-  .subtitle { text-align: center; color: #999; margin-bottom: 30px; }
-  .card { background: white; border-radius: 16px; padding: 20px; margin: 12px auto; max-width: 500px; box-shadow: 0 2px 12px rgba(0,0,0,0.08); }
-  .time { color: #e8847c; font-size: 13px; margin-bottom: 8px; }
-  .pressure { color: #666; font-size: 14px; }
-  .message { color: #333; font-size: 16px; margin-top: 10px; line-height: 1.6; }
-  .empty { text-align: center; color: #ccc; margin-top: 60px; font-size: 18px; }
-  .bunny { text-align: center; font-size: 60px; margin: 20px 0; }
-</style>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>C-touch 🐰</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: -apple-system, 'Segoe UI', sans-serif;
+            background: linear-gradient(135deg, #fff5f5 0%, #fef0e7 50%, #f5f0ff 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+        .header {
+            text-align: center;
+            padding: 30px 0 20px;
+        }
+        .bunny {
+            font-size: 80px;
+            animation: bounce 2s ease-in-out infinite;
+        }
+        .bunny.touched {
+            animation: shake 0.5s ease-in-out;
+        }
+        @keyframes bounce {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-10px); }
+        }
+        @keyframes shake {
+            0%, 100% { transform: rotate(0deg); }
+            25% { transform: rotate(-15deg) scale(1.2); }
+            75% { transform: rotate(15deg) scale(1.2); }
+        }
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        h1 {
+            color: #e8847c;
+            font-size: 32px;
+            margin: 10px 0 5px;
+            font-weight: 700;
+        }
+        .subtitle {
+            color: #bbb;
+            font-size: 14px;
+            margin-bottom: 20px;
+        }
+        .status {
+            text-align: center;
+            font-size: 16px;
+            color: #e8847c;
+            min-height: 30px;
+            margin-bottom: 10px;
+            font-weight: 600;
+        }
+        .bubble {
+            background: white;
+            border-radius: 20px;
+            padding: 16px 20px;
+            margin: 0 auto 20px;
+            max-width: 340px;
+            text-align: center;
+            font-size: 18px;
+            color: #333;
+            box-shadow: 0 4px 15px rgba(232, 132, 124, 0.15);
+            position: relative;
+            min-height: 60px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.3s ease;
+        }
+        .bubble::after {
+            content: '';
+            position: absolute;
+            bottom: -10px;
+            left: 50%;
+            transform: translateX(-50%);
+            border-left: 10px solid transparent;
+            border-right: 10px solid transparent;
+            border-top: 10px solid white;
+        }
+        .counter {
+            text-align: center;
+            color: #ccc;
+            font-size: 13px;
+            margin-bottom: 25px;
+        }
+        .divider {
+            text-align: center;
+            color: #ddd;
+            font-size: 13px;
+            margin: 20px 0;
+        }
+        .card {
+            background: white;
+            border-radius: 16px;
+            padding: 16px 20px;
+            margin: 10px auto;
+            max-width: 500px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+            animation: fadeIn 0.4s ease;
+        }
+        .card-top {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 8px;
+        }
+        .time {
+            color: #e8847c;
+            font-size: 12px;
+        }
+        .pressure-tag {
+            font-size: 11px;
+            padding: 2px 8px;
+            border-radius: 10px;
+            color: white;
+        }
+        .p-soft { background: #a8d8ea; }
+        .p-medium { background: #f8b595; }
+        .p-hard { background: #f67280; }
+        .card-message {
+            color: #333;
+            font-size: 15px;
+            line-height: 1.6;
+        }
+        .empty {
+            text-align: center;
+            color: #ccc;
+            margin-top: 40px;
+            font-size: 16px;
+        }
+        .online-dot {
+            display: inline-block;
+            width: 8px;
+            height: 8px;
+            background: #4CAF50;
+            border-radius: 50%;
+            margin-right: 5px;
+            animation: pulse 2s infinite;
+        }
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.4; }
+        }
+    </style>
 </head>
 <body>
-<div class="bunny">🐰</div>
-<h1>C-touch</h1>
-<p class="subtitle">每一次触摸都被记住</p>
-<div id="list"><p class="empty">还没有触摸记录~</p></div>
-<script>
-async function load() {
-  try {
-    const r = await fetch('/api/touch');
-    const data = await r.json();
-    if (!data.length) return;
-    const list = document.getElementById('list');
-    list.innerHTML = data.map(t => `
-      <div class="card">
-        <div class="time">🕐 ${t.time}</div>
-        <div class="pressure">压力值：${t.pressure}</div>
-        <div class="message">🐰 ${t.message}</div>
-      </div>
-    `).join('');
-  } catch(e) {}
-}
-load();
-setInterval(load, 10000);
-</script>
+    <div class="header">
+        <div class="bunny" id="bunny">🐰</div>
+        <h1>C-touch</h1>
+        <p class="subtitle"><span class="online-dot"></span>兔兔在线中 · 每一次触摸都被记住</p>
+    </div>
+
+    <div class="bubble" id="bubble">等待第一次触摸...</div>
+    <div class="status" id="status"></div>
+    <div class="counter" id="counter"></div>
+
+    <div class="divider">─── 触摸记录 ───</div>
+    <div id="list"><p class="empty">还没有触摸记录～</p></div>
+
+    <script>
+        let lastCount = 0;
+        let lastTimestamp = '';
+
+        function getPressureTag(pressure) {
+            if (pressure < 1000) return '<span class="pressure-tag p-soft">轻触</span>';
+            if (pressure < 2500) return '<span class="pressure-tag p-medium">正常</span>';
+            return '<span class="pressure-tag p-hard">用力</span>';
+        }
+
+        async function load() {
+            try {
+                const r = await fetch('/api/touch');
+                const data = await r.json();
+                if (!data.touches || !data.touches.length) return;
+
+                const list = document.getElementById('list');
+                const bubble = document.getElementById('bubble');
+                const bunny = document.getElementById('bunny');
+                const status = document.getElementById('status');
+                const counter = document.getElementById('counter');
+
+                const latest = data.touches[0];
+
+                if (latest.timestamp !== lastTimestamp && lastTimestamp !== '') {
+                    status.textContent = '✨ 有人摸了兔兔！';
+                    bunny.classList.add('touched');
+                    setTimeout(() => {
+                        status.textContent = '';
+                        bunny.classList.remove('touched');
+                    }, 3000);
+                }
+
+                lastTimestamp = latest.timestamp;
+                bubble.textContent = latest.message;
+                counter.textContent = `共被摸了 ${data.touches.length} 次`;
+
+                list.innerHTML = data.touches.map(t => `
+                    <div class="card">
+                        <div class="card-top">
+                            <span class="time">🕐 ${new Date(t.timestamp).toLocaleString('zh-CN')}</span>
+                            ${getPressureTag(t.pressure)}
+                        </div>
+                        <div class="card-message">🐰 ${t.message}</div>
+                    </div>
+                `).join('');
+            } catch(e) {
+                console.error('Load error:', e);
+            }
+        }
+
+        load();
+        setInterval(load, 3000);
+    </script>
 </body>
 </html>
